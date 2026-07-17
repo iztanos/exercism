@@ -1,23 +1,31 @@
 name: Auto-merge Exercism sync PRs
 
-on:
+"on":
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  auto-merge:
-    if: |
+  enable-auto-merge:
+    if: >-
       github.event.pull_request.user.login == 'exercism-solutions-syncer[bot]' &&
       github.event.pull_request.draft == false
-
     runs-on: ubuntu-latest
 
     steps:
-      - name: Enable auto-merge
+      - name: Print PR diagnostics
+        run: |
+          echo "PR author: ${{ github.event.pull_request.user.login }}"
+          echo "PR URL: ${{ github.event.pull_request.html_url }}"
+
+      - name: Enable squash auto-merge
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
