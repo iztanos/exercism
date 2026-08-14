@@ -25,8 +25,17 @@ jobs:
           echo "PR author: ${{ github.event.pull_request.user.login }}"
           echo "PR URL: ${{ github.event.pull_request.html_url }}"
 
-      - name: Enable squash auto-merge
+      - name: Merge Exercism PR with iztanos as co-author
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: |
+          gh pr merge "$PR_URL" \
+            --squash \
+            --subject "Sync Exercism solutions" \
+            --body "$(cat <<'EOF'
+Automated Exercism solution sync.
+
+Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>
+EOF
+)"
