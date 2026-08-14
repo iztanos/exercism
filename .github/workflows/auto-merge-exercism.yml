@@ -1,6 +1,6 @@
 name: Auto-merge Exercism sync PRs
 
-on:
+"on":
   pull_request_target:
     types:
       - opened
@@ -13,7 +13,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  merge-exercism-pr:
+  enable-auto-merge:
     if: >-
       github.event.pull_request.user.login == 'exercism-solutions-syncer[bot]' &&
       github.event.pull_request.draft == false
@@ -21,24 +21,17 @@ jobs:
 
     steps:
       - name: Print PR diagnostics
-        env:
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          echo "PR author: $PR_AUTHOR"
-          echo "PR URL: $PR_URL"
+          echo "PR author: ${{ github.event.pull_request.user.login }}"
+          echo "PR URL: ${{ github.event.pull_request.html_url }}"
 
-      - name: Merge Exercism PR
+      - name: Enable squash auto-merge
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           gh pr merge "$PR_URL" \
+            --auto \
             --squash \
             --subject "Sync Exercism solutions" \
-            --body "$(cat <<'EOF'
-Automated Exercism solution sync.
-
-Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>
-EOF
-)"
+            --body $'Automated Exercism solution sync.\n\nCo-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'
