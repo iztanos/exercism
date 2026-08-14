@@ -13,17 +13,19 @@ permissions:
   pull-requests: write
 
 jobs:
-  enable-auto-merge:
+  auto-merge:
     if: >-
       github.event.pull_request.user.login == 'exercism-solutions-syncer[bot]' &&
       github.event.pull_request.draft == false
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print PR diagnostics
+      - name: Participate in PR as iztanos
+        env:
+          GH_TOKEN: ${{ secrets.IZTANOS_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          echo "PR author: ${{ github.event.pull_request.user.login }}"
-          echo "PR URL: ${{ github.event.pull_request.html_url }}"
+          gh pr review "$PR_URL" --comment --body "Exercism sync."
 
       - name: Enable squash auto-merge
         env:
