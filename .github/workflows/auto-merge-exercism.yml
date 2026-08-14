@@ -25,7 +25,7 @@ jobs:
           GH_TOKEN: ${{ secrets.IZTANOS_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          gh pr review "$PR_URL" --comment --body "Exercism sync."
+          gh pr review "$PR_URL" --approve
 
       - name: Enable squash auto-merge
         env:
