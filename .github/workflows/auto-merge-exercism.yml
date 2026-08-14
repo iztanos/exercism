@@ -11,36 +11,47 @@ name: Auto-merge Exercism sync PRs
 permissions:
   contents: write
   pull-requests: write
+  checks: read
 
 jobs:
-  enable-auto-merge:
+  merge-exercism-pr:
     if: >-
       github.event.pull_request.user.login == 'exercism-solutions-syncer[bot]' &&
       github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
-      - name: Add co-author trailer to PR body
+      - name: Wait until PR is ready to merge
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          CURRENT_BODY="$(gh pr view "$PR_URL" --json body --jq '.body')"
+          while true; do
+            STATE="$(gh pr view "$PR_URL" \
+              --json mergeStateStatus \
+              --jq '.mergeStateStatus')"
 
-          if ! printf '%s\n' "$CURRENT_BODY" | grep -Fq \
-            'Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'; then
+            echo "Merge state: $STATE"
 
-            {
-              printf '%s\n\n' "$CURRENT_BODY"
-              printf '%s\n' 'Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'
-            } > /tmp/pr-body.txt
+            if [ "$STATE" = "CLEAN" ]; then
+              break
+            fi
 
-            gh pr edit "$PR_URL" --body-file /tmp/pr-body.txt
-          fi
+            if [ "$STATE" = "DIRTY" ]; then
+              echo "PR has merge conflicts."
+              exit 1
+            fi
 
-      - name: Enable squash auto-merge
+            sleep 15
+          done
+
+      - name: Squash merge
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          gh pr merge --auto --squash "$PR_URL"
+          gh pr merge "$PR_URL" \
+            --squash \
+            --subject "Sync Exercism solutions" \
+            --body $'Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'
