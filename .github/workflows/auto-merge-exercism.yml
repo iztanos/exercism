@@ -20,18 +20,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print PR diagnostics
+      - name: Add co-author trailer to PR body
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          echo "PR author: ${{ github.event.pull_request.user.login }}"
-          echo "PR URL: ${{ github.event.pull_request.html_url }}"
+          CURRENT_BODY="$(gh pr view "$PR_URL" --json body --jq '.body')"
+
+          if ! printf '%s\n' "$CURRENT_BODY" | grep -Fq \
+            'Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'; then
+
+            {
+              printf '%s\n\n' "$CURRENT_BODY"
+              printf '%s\n' 'Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'
+            } > /tmp/pr-body.txt
+
+            gh pr edit "$PR_URL" --body-file /tmp/pr-body.txt
+          fi
 
       - name: Enable squash auto-merge
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          gh pr merge "$PR_URL" \
-            --auto \
-            --squash \
-            --subject "Sync Exercism solutions" \
-            --body $'Automated Exercism solution sync.\n\nCo-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'
+          gh pr merge --auto --squash "$PR_URL"
