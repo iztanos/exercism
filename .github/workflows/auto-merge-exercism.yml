@@ -11,47 +11,27 @@ name: Auto-merge Exercism sync PRs
 permissions:
   contents: write
   pull-requests: write
-  checks: read
 
 jobs:
-  merge-exercism-pr:
+  enable-auto-merge:
     if: >-
       github.event.pull_request.user.login == 'exercism-solutions-syncer[bot]' &&
       github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 60
 
     steps:
-      - name: Wait until PR is ready to merge
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
+      - name: Print PR diagnostics
         run: |
-          while true; do
-            STATE="$(gh pr view "$PR_URL" \
-              --json mergeStateStatus \
-              --jq '.mergeStateStatus')"
+          echo "PR author: ${{ github.event.pull_request.user.login }}"
+          echo "PR URL: ${{ github.event.pull_request.html_url }}"
 
-            echo "Merge state: $STATE"
-
-            if [ "$STATE" = "CLEAN" ]; then
-              break
-            fi
-
-            if [ "$STATE" = "DIRTY" ]; then
-              echo "PR has merge conflicts."
-              exit 1
-            fi
-
-            sleep 15
-          done
-
-      - name: Squash merge
+      - name: Enable squash auto-merge
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           gh pr merge "$PR_URL" \
+            --auto \
             --squash \
             --subject "Sync Exercism solutions" \
             --body $'Co-authored-by: iztanos <139579436+iztanos@users.noreply.github.com>'
